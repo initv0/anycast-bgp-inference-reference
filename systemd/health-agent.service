@@ -1,0 +1,11 @@
+[Unit]
+Description=Anycast VIP health agent (inference SLO -> BGP advertisement)
+After=network-online.target frr.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Override tunables here or via a drop-in / EnvironmentFile.
+Environment=REGION=us-east-1
+Environment=METRICS_URL=http://localhost:9100
+ExecStart=/usr/local/bin/health-agent.sh

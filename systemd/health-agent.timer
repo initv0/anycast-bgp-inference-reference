@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the anycast VIP health agent every 2 seconds
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=2s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

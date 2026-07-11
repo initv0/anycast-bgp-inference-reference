@@ -1,0 +1,8 @@
+# Runtime state written by the health agent
+*.state
+/run/
+
+# Logs / editor / OS cruft
+*.log
+.DS_Store
+*.swp
