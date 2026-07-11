@@ -5,7 +5,7 @@ traffic**, with route advertisement tied to real inference SLOs instead of proce
 liveness.
 
 Companion to the article: **[BGP for the AI Era: Multi-Region Routing for Inference
-Workloads](https://vkafed.com/blog/bgp-for-the-ai-era-multi-region-routing-for-inference-workloads/)**
+Workloads](https://vkafed.com/bgp-for-the-ai-era-multi-region-routing-for-inference-workloads/)**
 by [Val Kafedzhy](https://vkafed.com).
 
 > This is **reference material**, not a turnkey deployment. It uses documentation IP
@@ -90,8 +90,8 @@ the region recovered. Withdraw slowly, re-announce even more slowly.
 
 ## Related
 
-- Article: [BGP for the AI Era](https://vkafed.com/blog/bgp-for-the-ai-era-multi-region-routing-for-inference-workloads/)
-- More: [vkafed.com/topics/ai-infrastructure-networking](https://vkafed.com/topics/ai-infrastructure-networking/)
+- Article: [BGP for the AI Era](https://vkafed.com/bgp-for-the-ai-era-multi-region-routing-for-inference-workloads/)
+- More: [vkafed.com/topics/ai-infrastructure-networking](https://vkafed.com/category/ai-infrastructure-networking/)
 
 ## License
 
