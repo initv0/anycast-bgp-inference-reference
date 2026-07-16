@@ -88,6 +88,20 @@ the region recovered. Withdraw slowly, re-announce even more slowly.
 - A metrics endpoint exposing real inference SLO signals
 - Transit/IX peers that honor BFD for sub-second failure detection
 
+## Benchmark: how fast does this actually fail over?
+
+`benchmark/` is a reproducible lab that measures the failover this config is built for. It stands up
+one anycast VIP served from three regions (a transit AS plus three region ASes, all FRR on Docker),
+fails the active region three ways, and reports convergence time and dropped requests:
+
+- health-triggered withdraw (what the health agent above does),
+- silent death detected only by the BGP hold timer,
+- silent death detected by BFD.
+
+The point is the gap between them: wiring health into routing, or adding BFD, turns a multi-second
+black-hole into a sub-second blip. It is one `docker compose up`. See
+[benchmark/README.md](benchmark/README.md).
+
 ## Related
 
 - Article: [BGP for the AI Era](https://vkafed.com/bgp-for-the-ai-era-multi-region-routing-for-inference-workloads/)

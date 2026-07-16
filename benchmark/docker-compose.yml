@@ -1,0 +1,105 @@
+# Anycast/BGP failover testbed: one transit AS, three region ASes, one anycast VIP.
+# Region 1 is preferred (transit local-pref). Fail it and watch traffic move to region 2.
+# Pin the FRR tag for reproducibility; bump deliberately and record it in the report.
+name: anycast-failover-bench
+
+x-frr: &frr
+  image: quay.io/frrouting/frr:10.2.6
+  cap_add: [NET_ADMIN, NET_RAW, SYS_ADMIN]
+  sysctls: ["net.ipv4.ip_forward=1"]
+  restart: "no"
+
+services:
+  transit:
+    <<: *frr
+    container_name: transit
+    volumes:
+      - ./frr/transit/frr.conf:/etc/frr/frr.conf:ro
+      - ./frr/transit/daemons:/etc/frr/daemons:ro
+    networks:
+      t1: { ipv4_address: 10.1.1.2 }
+      t2: { ipv4_address: 10.1.2.2 }
+      t3: { ipv4_address: 10.1.3.2 }
+      cl: { ipv4_address: 10.9.9.2 }
+
+  region1:
+    <<: *frr
+    container_name: region1
+    environment: { GW: "10.1.1.2", VIP: "10.0.0.1" }
+    entrypoint: ["/bin/sh", "/region-entrypoint.sh"]
+    volumes:
+      - ./frr/region1/frr.conf:/etc/frr/frr.conf:ro
+      - ./frr/region1/daemons:/etc/frr/daemons:ro
+      - ./frr/region-entrypoint.sh:/region-entrypoint.sh:ro
+    networks:
+      t1: { ipv4_address: 10.1.1.3 }
+
+  backend1:
+    image: python:3.11-slim
+    container_name: backend1
+    network_mode: "service:region1"
+    depends_on: [region1]
+    environment: { REGION: "region1", BASE_LATENCY_MS: "40", SLOW_PATH_MS: "250" }
+    volumes: ["./backend/server.py:/server.py:ro"]
+    command: ["python3", "/server.py"]
+
+  region2:
+    <<: *frr
+    container_name: region2
+    environment: { GW: "10.1.2.2", VIP: "10.0.0.1" }
+    entrypoint: ["/bin/sh", "/region-entrypoint.sh"]
+    volumes:
+      - ./frr/region2/frr.conf:/etc/frr/frr.conf:ro
+      - ./frr/region2/daemons:/etc/frr/daemons:ro
+      - ./frr/region-entrypoint.sh:/region-entrypoint.sh:ro
+    networks:
+      t2: { ipv4_address: 10.1.2.3 }
+
+  backend2:
+    image: python:3.11-slim
+    container_name: backend2
+    network_mode: "service:region2"
+    depends_on: [region2]
+    environment: { REGION: "region2", BASE_LATENCY_MS: "40", SLOW_PATH_MS: "250" }
+    volumes: ["./backend/server.py:/server.py:ro"]
+    command: ["python3", "/server.py"]
+
+  region3:
+    <<: *frr
+    container_name: region3
+    environment: { GW: "10.1.3.2", VIP: "10.0.0.1" }
+    entrypoint: ["/bin/sh", "/region-entrypoint.sh"]
+    volumes:
+      - ./frr/region3/frr.conf:/etc/frr/frr.conf:ro
+      - ./frr/region3/daemons:/etc/frr/daemons:ro
+      - ./frr/region-entrypoint.sh:/region-entrypoint.sh:ro
+    networks:
+      t3: { ipv4_address: 10.1.3.3 }
+
+  backend3:
+    image: python:3.11-slim
+    container_name: backend3
+    network_mode: "service:region3"
+    depends_on: [region3]
+    environment: { REGION: "region3", BASE_LATENCY_MS: "40", SLOW_PATH_MS: "250" }
+    volumes: ["./backend/server.py:/server.py:ro"]
+    command: ["python3", "/server.py"]
+
+  client:
+    image: python:3.11-slim
+    container_name: client
+    cap_add: [NET_ADMIN]
+    environment: { GW: "10.9.9.2", VIP: "10.0.0.1" }
+    entrypoint: ["/bin/sh", "/client-entrypoint.sh"]
+    volumes:
+      - ./harness/loadgen.py:/loadgen.py:ro
+      - ./harness/client-entrypoint.sh:/client-entrypoint.sh:ro
+      - ./results:/results
+    networks:
+      cl: { ipv4_address: 10.9.9.3 }
+
+networks:
+  t1: { driver: bridge, ipam: { config: [{ subnet: 10.1.1.0/24 }] } }
+  t2: { driver: bridge, ipam: { config: [{ subnet: 10.1.2.0/24 }] } }
+  t3: { driver: bridge, ipam: { config: [{ subnet: 10.1.3.0/24 }] } }
+  cl: { driver: bridge, ipam: { config: [{ subnet: 10.9.9.0/24 }] } }
